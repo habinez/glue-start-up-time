@@ -51,7 +51,7 @@ class StartupStack(core.Stack):
             execution_property=aws_glue.CfnJob.ExecutionPropertyProperty(
                 max_concurrent_runs=100
             ),
-            number_of_workers=2,
+            max_capacity=100,
             tags={
                 "Owner": "self",
                 "Purpose": "demo",
