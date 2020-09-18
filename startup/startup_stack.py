@@ -90,11 +90,18 @@ class StartupStack(core.Stack):
         start_job_task = tasks.GlueStartJobRun(
             self,
             "Start Job",
-            glue_job_name="demopysparkjob-IufZbpbO8lh6",
-            #arguments=sfn.TaskInput.from_object({"AllocatedCapacity": "$.num_workers"})
+            glue_job_name=glue_job.name,
+            arguments=sfn.TaskInput.from_object({
+                "AllocatedCapacity": "$.num_workers"
+            })
         )
+        start_job_task._parameters.update({
+                "AllocatedCapacity": "$.num_workers"
+            })
 
-        wait = sfn.Wait(self, "wait 1 min", time=60)
+        wait = sfn.WaitTime.duration(core.Duration.minutes(1))
+
+        wait = sfn.Wait(self, "wait 1 min", time=wait)
         terminate = sfn.Pass(self, "Terminate Job Run")
         wait.next(terminate)
         start_job_task.next(wait)
