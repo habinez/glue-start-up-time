@@ -1,0 +1,35 @@
+{
+  "StartAt": "Run Jobs",
+  "States": {
+    "Run Jobs": {
+      "Type": "Map",
+      "End": true,
+      "InputPath": "$",
+      "Iterator": {
+        "StartAt": "Start Job",
+        "States": {
+          "Start Job": {
+            "Next": "wait 1 min",
+            "Type": "Task",
+            "Resource": "arn:aws:states:::glue:startJobRun",
+            "Parameters": {
+              "JobName": "${job_name}",
+              "AllocatedCapacity.$": "$.num_workers"
+            }
+          },
+          "wait 1 min": {
+            "Type": "Wait",
+            "Seconds": 60,
+            "Next": "Terminate Job Run"
+          },
+          "Terminate Job Run": {
+            "Type": "Pass",
+            "End": true
+          }
+        }
+      },
+      "ItemsPath": "$.executions",
+      "MaxConcurrency": 0
+    }
+  }
+}

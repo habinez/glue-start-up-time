@@ -1,9 +1,7 @@
 import setuptools
 
-
 with open("README.md") as fp:
     long_description = fp.read()
-
 
 setuptools.setup(
     name="startup",
@@ -20,6 +18,17 @@ setuptools.setup(
 
     install_requires=[
         "aws-cdk.core==1.63.0",
+        "aws_cdk.aws_events",
+        "aws_cdk.aws_glue",
+        "aws_cdk.aws_s3",
+        "aws_cdk.aws_s3_assets",
+        "aws_cdk.aws_lambda",
+        "aws_cdk.aws_iam",
+        "aws_cdk.aws_stepfunctions",
+        "aws_cdk.aws_stepfunctions_tasks",
+        "aws_cdk.aws_events",
+        "aws_cdk.aws_events_targets",
+        "boto3"
     ],
 
     python_requires=">=3.6",
