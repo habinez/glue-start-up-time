@@ -142,9 +142,9 @@ class StartupStack(core.Stack):
                     "state": [
                         "RUNNING"
                     ],
-                    "jobName": [
-                        glue_job.name
-                    ]
+                    # "jobName": [
+                    #     glue_job.name
+                    # ]
                 }
             ),
             targets=[aws_events_targets.LambdaFunction(lambda_function)]
