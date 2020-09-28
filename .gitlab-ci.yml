@@ -17,8 +17,8 @@ cache:
 before_script:
   - apt-get update -qy
   - apk --no-cache add jq
-  
-  - apk add --update nodejs npm
+  - apk add --update nodejs nodejs-npm
+  - npm install -g aws-cdk
   - apt-get install -y python-dev python-pip
   - alias convert_report="jq -r '([.resource_changes[]?.change.actions?]|flatten)|{\"create\":(map(select(.==\"create\"))|length),\"update\":(map(select(.==\"update\"))|length),\"delete\":(map(select(.==\"delete\"))|length)}'"
   - cd ${TF_ROOT}
@@ -41,8 +41,8 @@ validate:
 plan:
   stage: build
   script:
-    - terraform plan -out=$PLAN
-    - terraform show --json $PLAN | convert_report > $PLAN_JSON
+    - cdk synth
+
   artifacts:
     name: plan
     paths:
@@ -57,7 +57,8 @@ apply:
   environment:
     name: production
   script:
-    - terraform apply -input=false $PLAN
+    - cdk deploy
+
   dependencies:
     - plan
   when: manual
@@ -69,7 +70,7 @@ destroy:
   environment:
     name: production
   script:
-    - terraform destroy -input=false $PLAN
+    - cdk destroy
   dependencies:
     - plan
   when: manual
