@@ -152,6 +152,10 @@ class StartupStack(core.Stack):
         stop_job_state = tasks.LambdaInvoke(
             self,
             "Stop Glue Job",
+            payload={
+                "job_name.$": "$.job_name",
+                "run_ids.$": "States.StringToJson($.taskresult)"
+            },
             lambda_function=stop_job_function,
             result_path="$.taskresult"
         )
@@ -163,23 +167,8 @@ class StartupStack(core.Stack):
 
         wait_state = sfn.Wait(self, "Wait", time=wait_time)
 
-        format_state = sfn.Pass(self,
-                                "Format Input",
-                                parameters={
-                                    "jobs.$": "States.StringToJson($.taskresult)"
-                                }
-                                )
-
-        stop_jobs_state = sfn.Map(self, "Stop Jobs",
-                                  input_path="$",
-                                  items_path="$.jobs",
-                                  max_concurrency=100
-                                  )
-        stop_jobs_state.iterator(stop_job_state)
-
         start_jobs_state.next(wait_state)
-        wait_state.next(format_state)
-        format_state.next(stop_jobs_state)
+        wait_state.next(stop_job_state)
 
         sfn_policy_statement = iam.PolicyStatement(
             actions=['logs:*',
