@@ -21,7 +21,13 @@ def handler(event, context):
         except Exception as exception:
             logger.error(exception)
 
-    return json.dumps(started_runs)
+    return json.dumps(
+        {
+            "job_name": job_name,
+            "run_ids": started_runs
+        }
+
+        )
 
 
 # if  __name__ == "__main__" :
