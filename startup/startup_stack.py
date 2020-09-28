@@ -1,4 +1,5 @@
 import os
+from os import name
 
 from aws_cdk import (
     core,
@@ -67,7 +68,7 @@ class StartupStack(core.Stack):
             table_prefix="",
             targets={"s3Targets": [
                 {
-                    "path": "s3://snowflake-workshop-lab/weather-nyc"
+                    "path": "s3://conco-aws-athena/snowflake-workshop-lab/weather-nyc"
                 }
             ]
             }
@@ -86,7 +87,7 @@ class StartupStack(core.Stack):
                 "--enable-continuous-cloudwatch-log": True,
                 # "--continuous-log-logStreamPrefix": "pyspark",
                 "--enable-continuous-log-filter": False,
-                #"--enable-metrics": "",
+                "--enable-metrics": "",
                 "--TempDir": f"s3://{bucket_name}/glue/tmp",
                 "--BUCKET": bucket_name
             },
@@ -123,41 +124,36 @@ class StartupStack(core.Stack):
 
         lambda_execution_role.add_to_policy(lambda_execution_policy_statement)
 
-        lambda_function = lambda_.Function(
+        stop_job_function = lambda_.Function(
             self, "terminate-glue-job-run",
-            code=lambda_.Code.from_asset(os.path.join(dir_name, "lambda")),
+            code=lambda_.Code.from_asset(os.path.join(dir_name, "lambda", "stop")),
             runtime=lambda_.Runtime.PYTHON_3_7,
             handler="terminate_job_run.handler",
             role=lambda_execution_role,
             environment=dict(WAIT_SECONDS="10")
         )
 
-        aws_events.Rule(
-            self,
-            "glue-job-start-event",
-            event_pattern=aws_events.EventPattern(
-                source=["aws.glue"],
-                detail_type=["Glue Job Run Status"],
-                detail={
-                    "state": [
-                        "RUNNING"
-                    ],
-                    # "jobName": [
-                    #     glue_job.name
-                    # ]
-                }
-            ),
-            targets=[aws_events_targets.LambdaFunction(lambda_function)]
+        start_jobs_function = lambda_.Function(
+            self, "start-glue-job-runs",
+            code=lambda_.Code.from_asset(os.path.join(dir_name, "lambda", "start")),
+            runtime=lambda_.Runtime.PYTHON_3_7,
+            handler="start_glue_jobs.handler",
+            role=lambda_execution_role,
+            environment=dict(NUM_RUNS="10", JOB_NAME=glue_job.name)
         )
 
-        start_job_state: GlueStartJobRun = tasks.GlueStartJobRun(
+        start_jobs_state = tasks.LambdaInvoke(
             self,
-            "Start Job",
-            glue_job_name=glue_job.name,
-            arguments=sfn.TaskInput.from_object({
-                "AllocatedCapacity": "$.num_workers",
-                "glueJobName": glue_job.name
-            })
+            "Start Glue Jobs",
+            lambda_function=start_jobs_function,
+            result_path="$.taskresult"
+        )
+
+        stop_job_state = tasks.LambdaInvoke(
+            self,
+            "Stop Glue Job",
+            lambda_function=stop_job_function,
+            result_path="$.taskresult"
         )
 
         # # _future_ support of updating parameters
@@ -165,15 +161,43 @@ class StartupStack(core.Stack):
 
         wait_time = sfn.WaitTime.duration(core.Duration.minutes(1))
 
-        wait_state = sfn.Wait(self, "wait 1 min", time=wait_time)
-        terminate_state = sfn.Pass(self, "Terminate Job Run")
-        wait_state.next(terminate_state)
-        start_job_state.next(wait_state)
-        run_jobs_state = sfn.Map(self, "Run Jobs",
-                                 input_path="$",
-                                 items_path="$.executions",
-                                 max_concurrency=0
-                                 )
-        run_jobs_state.iterator(start_job_state)
+        wait_state = sfn.Wait(self, "Wait", time=wait_time)
 
-        sfn.StateMachine(self, "StateMachine", definition=run_jobs_state)
+        format_state = sfn.Pass(self,
+                                "Format Input",
+                                parameters={
+                                    "jobs.$": "States.StringToJson($.taskresult)"
+                                }
+                                )
+
+        stop_jobs_state = sfn.Map(self, "Stop Jobs",
+                                  input_path="$",
+                                  items_path="$.jobs",
+                                  max_concurrency=100
+                                  )
+        stop_jobs_state.iterator(stop_job_state)
+
+        start_jobs_state.next(wait_state)
+        wait_state.next(format_state)
+        format_state.next(stop_jobs_state)
+
+        sfn_policy_statement = iam.PolicyStatement(
+            actions=['logs:*',
+                     "events:*",
+                     'cloudwatch:*',
+                     'lambda:InvokeFunction'
+                     ]
+        )
+
+        sfn_policy_statement.add_all_resources()
+
+        sfn_role = iam.Role(
+            self,
+            'StepFunctionRole',
+            assumed_by=iam.ServicePrincipal('states.amazonaws.com')
+        )
+        sfn_role.add_to_policy(sfn_policy_statement)
+
+        sfn.StateMachine(self, "StateMachine",
+                         definition=start_jobs_state,
+                         role=sfn_role)
