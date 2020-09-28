@@ -126,6 +126,7 @@ class StartupStack(core.Stack):
 
         stop_job_function = lambda_.Function(
             self, "terminate-glue-job-run",
+            function_name="stop-start-glue-job-runs",
             code=lambda_.Code.from_asset(os.path.join(dir_name, "lambda", "stop")),
             runtime=lambda_.Runtime.PYTHON_3_7,
             handler="terminate_job_run.handler",
@@ -135,6 +136,7 @@ class StartupStack(core.Stack):
 
         start_jobs_function = lambda_.Function(
             self, "start-glue-job-runs",
+            function_name="demo-start-glue-job-runs",
             code=lambda_.Code.from_asset(os.path.join(dir_name, "lambda", "start")),
             runtime=lambda_.Runtime.PYTHON_3_7,
             handler="start_glue_jobs.handler",
@@ -185,4 +187,5 @@ class StartupStack(core.Stack):
 
         sfn.StateMachine(self, "StateMachine",
                          definition=start_jobs_state,
+                         state_machine_name="orchestrator",
                          role=sfn_role)
