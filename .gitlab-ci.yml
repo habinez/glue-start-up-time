@@ -1,14 +1,8 @@
-# Official image for Hashicorp's Terraform. It uses light image which is Alpine
-# based as it is much lighter.
-#
-# Entrypoint is also needed as image by default set `terraform` binary as an
-# entrypoint.
 image:
   name: python:3.7
   entrypoint:
     - '/usr/bin/env'
     - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-
 
 cache:
   paths:
@@ -16,7 +10,7 @@ cache:
 
 before_script:
   - apt-get update -qy
-  - apk --no-cache add jq
+  - apt --no-cache add jq
   - apk add --update nodejs nodejs-npm
   - npm install -g aws-cdk
   - apt-get install -y python-dev python-pip
