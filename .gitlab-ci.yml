@@ -10,8 +10,9 @@ cache:
 
 before_script:
   - apt-get update -qy
-  - apt --no-cache add jq
-  - apk add --update nodejs nodejs-npm
+  - apt-get install curl
+  - curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+  - apt-get install nodejs nodejs-npm
   - npm install -g aws-cdk
   - apt-get install -y python-dev python-pip
   - mkdir -p ./.aws

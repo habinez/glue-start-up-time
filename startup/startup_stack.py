@@ -155,7 +155,7 @@ class StartupStack(core.Stack):
             self,
             "Stop Glue Job",
             lambda_function=stop_job_function,
-            payload=sfn.TaskInput.from_data_at("$.Payload"),
+            payload=sfn.TaskInput.from_data_at("$.taskresult.Payload"),
             result_path="$.taskresult"
         )
 
