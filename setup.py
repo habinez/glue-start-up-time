@@ -17,7 +17,7 @@ setuptools.setup(
     packages=setuptools.find_packages(where="startup"),
 
     install_requires=[
-        "aws-cdk.core==1.63.0",
+        "aws-cdk.core>=1.64.0",
         "aws_cdk.aws_events",
         "aws_cdk.aws_glue",
         "aws_cdk.aws_s3",

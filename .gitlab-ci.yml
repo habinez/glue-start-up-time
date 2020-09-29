@@ -38,7 +38,7 @@ validate:
   script:
     - cdk version
 
-plan:
+build:
   stage: build
   script:
     - source .env/bin/activate
@@ -51,7 +51,7 @@ plan:
       junit: cfn.json
 
 
-apply:
+deploy:
   stage: deploy
   script:
     - cdk deploy -O outputs.json
@@ -70,10 +70,11 @@ apply:
 
 run:
   stage: run
+  when: manual
   script:
     - aws stepfunctions start-execution --state-machine-arn $(cat outputs.json | jq -r ".startup.statemachinearn") --name "ci-test-3" --input "{\"job_runs\":\"$JOB_RUNS\"}"
   dependencies:
-    - apply
+    - deploy
 
 destroy:
   stage: decommution
