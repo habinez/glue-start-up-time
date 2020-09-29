@@ -4,6 +4,9 @@ image:
     - '/usr/bin/env'
     - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 
+variables:
+  JOB_RUNS: "3"
+
 cache:
   paths:
     - .env
@@ -27,6 +30,7 @@ stages:
   - build
   - test
   - deploy
+  - run
   - decommution
 
 validate:
@@ -51,10 +55,14 @@ plan:
 # action.
 apply:
   stage: deploy
-  environment:
-    name: production
   script:
-    - cdk deploy
+    - cdk deploy -O outputs.json
+  artifacts:
+    name: production
+    paths:
+      - outputs.json
+    reports:
+      junit: outputs.json
 
   dependencies:
     - plan
@@ -62,10 +70,16 @@ apply:
   only:
     - develop
 
+run:
+  stage: run
+  script:
+    - aws stepfunctions start-execution --state-machine-arn $(cat outputs.json | jq -r ".startup.statemachinearn") --name "ci-test-3" --input "{\"job_runs\":\"$JOB_RUNS\"}"
+
+  dependencies:
+    - appl
+
 destroy:
   stage: decommution
-  environment:
-    name: production
   script:
     - cdk destroy
   dependencies:

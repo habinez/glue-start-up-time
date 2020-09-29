@@ -1,19 +1,15 @@
 import os
-from os import name
 
 from aws_cdk import (
     core,
     aws_s3,
     aws_s3_assets,
     aws_glue,
-    aws_events,
     aws_iam as iam,
     aws_lambda as lambda_,
-    aws_events_targets,
     aws_stepfunctions as sfn,
     aws_stepfunctions_tasks as tasks
 )
-from aws_cdk.aws_stepfunctions_tasks import GlueStartJobRun
 
 
 class StartupStack(core.Stack):
@@ -152,7 +148,7 @@ class StartupStack(core.Stack):
 
         stop_job_state = tasks.LambdaInvoke(
             self,
-            "Stop Glue Job",
+            "Stop Glue Jobs",
             lambda_function=stop_job_function,
             payload=sfn.TaskInput.from_data_at("$.taskresult.Payload"),
             result_path="$.taskresult"
@@ -185,7 +181,11 @@ class StartupStack(core.Stack):
         sfn_role.add_to_policy(sfn_policy_statement)
 
         state_machine = sfn.StateMachine(self, "StateMachine",
-                         definition=start_jobs_state,
-                         state_machine_name="orchestrator",
-                         role=sfn_role)
+                                         definition=start_jobs_state,
+                                         state_machine_name="orchestrator",
+                                         role=sfn_role)
 
+        core.CfnOutput(self,
+                       "state machine arn",
+                       value=state_machine.state_machine_arn
+                       )
