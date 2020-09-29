@@ -12,7 +12,7 @@ before_script:
   - apt-get update -qy
   - apt-get install curl
   - curl -sL https://deb.nodesource.com/setup_12.x | bash -
-  - apt-get install nodejs nodejs-npm
+  - apt-get install nodejs
   - npm install -g aws-cdk
   - apt-get install -y python-dev python-pip
   - mkdir -p ./.aws
