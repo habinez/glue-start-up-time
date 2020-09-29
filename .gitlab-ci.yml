@@ -68,14 +68,14 @@ deploy:
   only:
     - develop
 
-run:
+deploy run:
   stage: deploy
   when: manual
   script:
     - cat outputs.json | jq -r ".startup.statemachinearn"
     - aws stepfunctions start-execution --state-machine-arn $(cat outputs.json | jq -r ".startup.statemachinearn") --name "ci-test-3" --input "{\"job_runs\":\"$JOB_RUNS\"}"
   dependencies:
-    - deploy
+    - build
 
 destroy:
   stage: decommution
