@@ -69,7 +69,7 @@ deploy:
     - develop
 
 run:
-  stage: run
+  stage: deploy
   when: manual
   script:
     - cat outputs.json | jq -r ".startup.statemachinearn"
