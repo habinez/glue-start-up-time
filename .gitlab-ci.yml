@@ -63,7 +63,7 @@ deploy:
       junit: outputs.json
 
   dependencies:
-    - plan
+    - build
   when: manual
   only:
     - develop
@@ -72,6 +72,7 @@ run:
   stage: run
   when: manual
   script:
+    - cat outputs.json | jq -r ".startup.statemachinearn"
     - aws stepfunctions start-execution --state-machine-arn $(cat outputs.json | jq -r ".startup.statemachinearn") --name "ci-test-3" --input "{\"job_runs\":\"$JOB_RUNS\"}"
   dependencies:
     - deploy
@@ -81,7 +82,7 @@ destroy:
   script:
     - cdk destroy
   dependencies:
-    - plan
+    - deploy
   when: manual
   only:
     - develop
