@@ -6,7 +6,7 @@ image:
 
 cache:
   paths:
-    - .terraform
+    - .env
 
 before_script:
   - apt-get update -qy
@@ -15,8 +15,9 @@ before_script:
   - apt-get install nodejs
   - npm install -g aws-cdk
   - apt-get install -y python-dev python-pip
-  - mkdir -p ./.aws
+  - mkdir -p ~/.aws ./.env
   - echo $AWS_SERVICE_ACCOUNT | base64 -d > ./.aws/config
+  - python -m venv .env && source .env/bin/activeate
   - python -m pip install awscli boto3
   - python -m pip install -r requirements.txt
 
@@ -36,7 +37,14 @@ validate:
 plan:
   stage: build
   script:
-    - cdk synth
+    - source .env/bin/activate
+    - cdk synth -j > cfn.json
+  artifacts:
+    name: validate
+    paths:
+      - cfn.json
+    reports:
+      junit: cfn.json
 
 
 # Separate apply job for manual launching Terraform as it can be destructive

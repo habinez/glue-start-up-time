@@ -126,12 +126,11 @@ class StartupStack(core.Stack):
 
         stop_job_function = lambda_.Function(
             self, "terminate-glue-job-run",
-            function_name="stop-start-glue-job-runs",
+            function_name="demo-stop-glue-job-runs",
             code=lambda_.Code.from_asset(os.path.join(dir_name, "lambda", "stop")),
             runtime=lambda_.Runtime.PYTHON_3_7,
             handler="terminate_job_run.handler",
-            role=lambda_execution_role,
-            environment=dict(WAIT_SECONDS="10")
+            role=lambda_execution_role
         )
 
         start_jobs_function = lambda_.Function(
@@ -141,7 +140,7 @@ class StartupStack(core.Stack):
             runtime=lambda_.Runtime.PYTHON_3_7,
             handler="start_glue_jobs.handler",
             role=lambda_execution_role,
-            environment=dict(NUM_RUNS="10", JOB_NAME=glue_job.name)
+            environment=dict(JOB_NAME=glue_job.name)
         )
 
         start_jobs_state = tasks.LambdaInvoke(
@@ -162,7 +161,7 @@ class StartupStack(core.Stack):
         # # _future_ support of updating parameters
         # # start_job_state._parameters.update({ "AllocatedCapacity": "$.num_workers" })
 
-        wait_time = sfn.WaitTime.duration(core.Duration.minutes(1))
+        wait_time = sfn.WaitTime.duration(core.Duration.seconds(30))
 
         wait_state = sfn.Wait(self, "Wait", time=wait_time)
 
@@ -185,7 +184,8 @@ class StartupStack(core.Stack):
         )
         sfn_role.add_to_policy(sfn_policy_statement)
 
-        sfn.StateMachine(self, "StateMachine",
+        state_machine = sfn.StateMachine(self, "StateMachine",
                          definition=start_jobs_state,
                          state_machine_name="orchestrator",
                          role=sfn_role)
+
