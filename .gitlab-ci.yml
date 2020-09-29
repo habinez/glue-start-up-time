@@ -5,7 +5,7 @@ image:
     - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 
 variables:
-  JOB_RUNS: "3"
+  JOB_RUNS: 3
 
 cache:
   paths:
@@ -51,8 +51,6 @@ plan:
       junit: cfn.json
 
 
-# Separate apply job for manual launching Terraform as it can be destructive
-# action.
 apply:
   stage: deploy
   script:
@@ -74,9 +72,8 @@ run:
   stage: run
   script:
     - aws stepfunctions start-execution --state-machine-arn $(cat outputs.json | jq -r ".startup.statemachinearn") --name "ci-test-3" --input "{\"job_runs\":\"$JOB_RUNS\"}"
-
   dependencies:
-    - appl
+    - apply
 
 destroy:
   stage: decommution
