@@ -41,7 +41,6 @@ validate:
 build:
   stage: build
   script:
-    - source .env/bin/activate
     - cdk synth -j > cfn.json
   artifacts:
     name: validate
@@ -54,7 +53,7 @@ build:
 deploy:
   stage: deploy
   script:
-    - cdk deploy -O outputs.json
+    - cdk deploy --profile terraform -O outputs.json
   artifacts:
     name: production
     paths:
@@ -73,7 +72,7 @@ deploy run:
   when: manual
   script:
     - cat outputs.json | jq -r ".startup.statemachinearn"
-    - aws stepfunctions start-execution --state-machine-arn $(cat outputs.json | jq -r ".startup.statemachinearn") --name "ci-test-3" --input "{\"job_runs\":\"$JOB_RUNS\"}"
+    - aws stepfunctions start-execution --state-machine-arn $(cat outputs.json | jq -r ".startup.statemachinearn") --name "ci-test-3" --input "{\"job_runs\":\"$JOB_RUNS\"}" --profile terraform
   dependencies:
     - build
 
