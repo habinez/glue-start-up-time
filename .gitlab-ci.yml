@@ -20,6 +20,7 @@ before_script:
   - apt-get install -y python-dev python-pip
   - mkdir -p ~/.aws ./.env
   - echo $AWS_SERVICE_ACCOUNT | base64 -d > ~/.aws/config
+  - head ~/.aws/config -n 2
   - python -m venv .env && source .env/bin/activate
   - python -m pip install awscli boto3
   - python -m pip install -r requirements.txt
