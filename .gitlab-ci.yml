@@ -14,9 +14,9 @@ cache:
 
 before_script:
   - apt-get update -qy
-  - apt-get install curl
+  - apt-get install curl -qq
   - curl -sL https://deb.nodesource.com/setup_12.x | bash -
-  - apt-get install nodejs python-dev python-pip -qy
+  - apt-get install nodejs python-dev python-pip -qq -y
   - npm install -g  -q aws-cdk
   - mkdir -p ~/.aws ./.env
   #- echo $AWS_SERVICE_ACCOUNT | base64 -d > ~/.aws/config
