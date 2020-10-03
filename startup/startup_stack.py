@@ -92,7 +92,7 @@ class StartupStack(core.Stack):
             glue_version="2.0",
             log_uri=f"s3://{bucket_name}/glue/logs",
             execution_property=aws_glue.CfnJob.ExecutionPropertyProperty(
-                max_concurrent_runs=100
+                max_concurrent_runs=50
             ),
             max_capacity=2,
             tags={
