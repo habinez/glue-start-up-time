@@ -1,0 +1,5 @@
+{
+  "startup": {
+    "statemachinearn": "arn:aws:states:us-east-2:134618909356:stateMachine:orchestrator"
+  }
+}

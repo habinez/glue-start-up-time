@@ -114,6 +114,7 @@ class StartupStack(core.Stack):
                      "logs:CreateLogGroup",
                      "logs:CreateLogStream",
                      "logs:PutLogEvents",
+                     "states:StartExecution",
                      "events:*",
                      "glue:*"
                      ]
@@ -131,9 +132,9 @@ class StartupStack(core.Stack):
             role=lambda_execution_role
         )
 
-        start_jobs_function = lambda_.Function(
-            self, "start-glue-job-runs",
-            function_name="demo-start-glue-job-runs",
+        start_glue_job_function = lambda_.Function(
+            self, "start-glue-job",
+            function_name="demo-start-glue-job",
             code=lambda_.Code.from_asset(os.path.join(dir_name, "lambda", "start")),
             runtime=lambda_.Runtime.PYTHON_3_7,
             handler="start_glue_jobs.handler",
@@ -141,35 +142,43 @@ class StartupStack(core.Stack):
             environment=dict(JOB_NAME=glue_job.name)
         )
 
-        start_jobs_state = tasks.LambdaInvoke(
+        start_job_task = tasks.LambdaInvoke(
             self,
             "Start Glue Jobs",
-            lambda_function=start_jobs_function,
-            result_path="$.taskresult"
+            lambda_function=start_glue_job_function,
+            result_path="$",
+            output_path="$.Payload",
+            #result_selector= {"Payload.$": "States.StringToJson($.Payload)"}
+            payload=sfn.TaskInput.from_data_at("$")
         )
 
+        start_jobs_state = sfn.Map(self, "Run Jobs",
+                                   input_path="$",
+                                   items_path="$.capacities",
+                                   max_concurrency=5,
+                                   parameters={
+                                       "capacity.$": "$$.Map.Item.Value",
+                                       "glue_job_name.$": "$.job_name"
+                                   }
+                                   )
+        start_jobs_state.iterator(start_job_task)
+
+        wait_time = sfn.WaitTime.duration(core.Duration.seconds(30))
+        wait_state = sfn.Wait(self, "Wait 30 Sec", time=wait_time)
 
         stop_job_state = tasks.LambdaInvoke(
             self,
             "Stop Glue Jobs",
             lambda_function=stop_job_function,
-            payload=sfn.TaskInput.from_data_at("$.taskresult.Payload"),
-            result_path="$.taskresult"
+            payload=sfn.TaskInput.from_data_at("$")
         )
-
-        # # _future_ support of updating parameters
-        # # start_job_state._parameters.update({ "AllocatedCapacity": "$.num_workers" })
-
-        wait_time = sfn.WaitTime.duration(core.Duration.seconds(30))
-
-        wait_state = sfn.Wait(self, "Wait", time=wait_time)
-
 
         start_jobs_state.next(wait_state)
         wait_state.next(stop_job_state)
         sfn_policy_statement = iam.PolicyStatement(
-            actions=['logs:*',
-                     "events:*",
+            actions=["logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
                      'cloudwatch:*',
                      'lambda:InvokeFunction'
                      ]
@@ -211,4 +220,16 @@ class StartupStack(core.Stack):
                 }
             ),
             targets=[aws_events_targets.LambdaFunction(stop_job_function)]
+        )
+
+        lambda_.Function(
+            self, "demo-start-state-machine",
+            function_name="demo-start-state-machine",
+            code=lambda_.Code.from_asset(os.path.join(dir_name, "lambda", "start")),
+            runtime=lambda_.Runtime.PYTHON_3_7,
+            handler="start_state_machine.handler",
+            role=lambda_execution_role,
+            environment=dict(JOB_NAME=glue_job.name,
+                             STATE_MACHINE_ARN=state_machine.state_machine_arn
+                             )
         )

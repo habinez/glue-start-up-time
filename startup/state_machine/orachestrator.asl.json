@@ -1,0 +1,49 @@
+{
+  "StartAt": "Run Jobs",
+  "States": {
+    "Run Jobs": {
+      "Type": "Map",
+      "Next": "Wait",
+      "InputPath": "$",
+      "Iterator": {
+        "StartAt": "Start Glue Jobs",
+        "States": {
+          "Start Glue Jobs": {
+            "End": true,
+            "Type": "Task",
+            "ResultPath": "$",
+            "OutputPath": "$.Payload",
+            "ResultSelector": {
+              "Payload.$": "States.StringToJson($.Payload)"
+            },
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "FunctionName": "arn:aws:lambda:us-east-2:134618909356:function:demo-start-glue-job",
+              "Payload.$": "$"
+            }
+          }
+        }
+      },
+      "ItemsPath": "$.capacities",
+      "Parameters": {
+        "capacity.$": "$$.Map.Item.Value",
+        "glue_job_name.$": "$.job_name"
+      },
+      "MaxConcurrency": 5
+    },
+    "Wait": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "Stop Glue Jobs"
+    },
+    "Stop Glue Jobs": {
+      "End": true,
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-2:134618909356:function:demo-stop-glue-job-runs",
+        "Payload.$": "$"
+      }
+    }
+  }
+}

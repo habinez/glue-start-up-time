@@ -10,29 +10,22 @@ logger.setLevel(logging.INFO)
 
 
 def handler(event, context):
+    logger.info(json.dumps(event, default=str, indent=4))
     glue_client = client("glue")
-    job_runs = event["job_runs"]
-    job_name = os.environ["JOB_NAME"]
-    started_runs = list()
-    job_runs = int(job_runs)
+    max_capacity = int(event["capacity"])
+    glue_job_name = event["glue_job_name"]
 
-    if job_runs > 50:
-        job_runs = 50
-    for _ in range(job_runs):
-        try:
-            response = glue_client.start_job_run(
-                JobName=job_name,
-                MaxCapacity=randint(2, job_runs)
-            )
-            logger.info(json.dumps(response, default=str))
-            started_runs.append(response['JobRunId'])
+    try:
+        response = glue_client.start_job_run(
+            JobName=glue_job_name,
+            AllocatedCapacity = max_capacity    
+        )
+        output = dict(glue_job_name=glue_job_name,
+                      job_run_id=response['JobRunId']
+                      )
+        return json.dumps(output, default=str)
 
-        except Exception as exception:
-            logger.error(exception)
-            raise exception
+    except Exception as exception:
+        logger.error(exception)
+        raise exception
 
-    return json.dumps(dict(job_name=job_name,run_ids=started_runs))
-
-#
-# if __name__ == "__main__":
-#     handler(event={dict(job_runs="13")}, context={}):

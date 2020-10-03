@@ -6,23 +6,23 @@ from boto3 import client
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+
 def handler(event, context):
     glue_client = client("glue")
     logger.info(json.dumps(event, default=str, indent=4))
-    run_ids = event['run_ids']
-    if 'job_name' in event.keys():
+    glue_job_name = str()
+    ids = list()
+    for e in event:
+        glue_job_name = e.get("glue_job_name")
+        ids.append(e.get("job_run_id"))
+
+    if glue_job_name:
         try:
             response = glue_client.batch_stop_job_run(
-                    JobName=event['job_name'],
-                    JobRunIds=run_ids
+                    JobName=glue_job_name,
+                    JobRunIds= ids
                 )
             return json.dumps(response, default=str, indent=4)
 
         except Exception as exception:
-            return json.dumps(exception, default=str)
-
-if __name__ == "__main__":
-
-    with open("sample_event.json") as e_file:
-        event = json.load(e_file)
-        print(handler(event, None))
+            return exception.args
