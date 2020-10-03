@@ -54,7 +54,7 @@ build:
 deploy:
   stage: deploy
   script:
-    - cdk deploy --profile terraform -O outputs.json
+    - cdk deploy -O outputs.json
   artifacts:
     name: production
     paths:

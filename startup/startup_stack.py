@@ -5,8 +5,10 @@ from aws_cdk import (
     aws_s3,
     aws_s3_assets,
     aws_glue,
+    aws_events,
     aws_iam as iam,
     aws_lambda as lambda_,
+    aws_events_targets,
     aws_stepfunctions as sfn,
     aws_stepfunctions_tasks as tasks
 )
@@ -189,3 +191,22 @@ class StartupStack(core.Stack):
                        "state machine arn",
                        value=state_machine.state_machine_arn
                        )
+
+        aws_events.Rule(
+            self,
+            "glue-job-start-event",
+            enabled=False,
+            event_pattern=aws_events.EventPattern(
+                source=["aws.glue"],
+                detail_type=["Glue Job Run Status"],
+                detail={
+                    "state": [
+                        "RUNNING"
+                    ],
+                    "jobName": [
+                         glue_job.name
+                    ]
+                }
+            ),
+            targets=[aws_events_targets.LambdaFunction(stop_job_function)]
+        )
