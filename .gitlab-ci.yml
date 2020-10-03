@@ -54,7 +54,7 @@ build:
 deploy:
   stage: deploy
   script:
-    - cdk deploy -O outputs.json
+    - cdk deploy --json --force --output-file outputs.json
   artifacts:
     name: production
     paths:
@@ -80,7 +80,7 @@ deploy run:
 delete resources:
   stage: delete
   script:
-    - cdk destroy
+    - cdk destroy --json --force
   dependencies:
     - deploy
   when: manual
