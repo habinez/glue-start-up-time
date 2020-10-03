@@ -53,7 +53,7 @@ build:
 deploy:
   stage: deploy
   script:
-    #- cdk bootstrap aws://$CDK_DEFAULT_ACCOUN/$AWS_DEFAULT_REGION
+    - cdk bootstrap aws://$CDK_DEFAULT_ACCOUN/$CDK_DEFAULT_REGION
     - cdk deploy --json --require-approval never --output-file outputs.json
   artifacts:
     name: production
