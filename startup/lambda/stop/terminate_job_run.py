@@ -21,7 +21,8 @@ def handler(event, context):
         except Exception as exception:
             return json.dumps(exception, default=str)
 
+if __name__ == "__main__":
 
-# with open("sample_event.json") as e_file:
-#     event = json.load(e_file)
-#     print(handler(event, None))
+    with open("sample_event.json") as e_file:
+        event = json.load(e_file)
+        print(handler(event, None))
