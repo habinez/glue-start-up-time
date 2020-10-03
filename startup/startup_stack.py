@@ -148,6 +148,7 @@ class StartupStack(core.Stack):
             result_path="$.taskresult"
         )
 
+
         stop_job_state = tasks.LambdaInvoke(
             self,
             "Stop Glue Jobs",
@@ -162,6 +163,7 @@ class StartupStack(core.Stack):
         wait_time = sfn.WaitTime.duration(core.Duration.seconds(30))
 
         wait_state = sfn.Wait(self, "Wait", time=wait_time)
+
 
         start_jobs_state.next(wait_state)
         wait_state.next(stop_job_state)
@@ -204,7 +206,7 @@ class StartupStack(core.Stack):
                         "RUNNING"
                     ],
                     "jobName": [
-                         glue_job.name
+                        glue_job.name
                     ]
                 }
             ),

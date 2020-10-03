@@ -26,10 +26,10 @@ print(sample1.count())
 
 output_path = "s3://{bucket}/glue/jobs/{run_id}/output/sample".format(bucket=bucket, run_id=run_id)
 
-(sample1.toDF()
- .repartition(1)
- .write
- .format("parquet")
- .option("SaveMode.Overwrite", "overwrite")
- .save(output_path)
- )
+# (sample1.toDF()
+#  .repartition(1)
+#  .write
+#  .format("parquet")
+#  .option("SaveMode.Overwrite", "overwrite")
+#  .save(output_path)
+#  )
