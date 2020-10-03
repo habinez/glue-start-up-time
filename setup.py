@@ -28,7 +28,8 @@ setuptools.setup(
         "aws_cdk.aws_stepfunctions_tasks",
         "aws_cdk.aws_events",
         "aws_cdk.aws_events_targets",
-        "boto3"
+        "boto3",
+        "awscli"
     ],
 
     python_requires=">=3.6",
